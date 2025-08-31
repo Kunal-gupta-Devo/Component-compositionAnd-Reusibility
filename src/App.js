@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 const tempMovieData = [
   {
     imdbID: "tt1375666",
@@ -49,11 +47,16 @@ const tempWatchedData = [
 
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
-
+const KEY = "6e5f9280";
 export default function App() {
-  const [movies, setMovies] = useState(tempMovieData);
-  const [watched, setWatched] = useState(tempWatchedData);
+  const [movies, setMovies] = useState([]);
+  const [watched, setWatched] = useState([]);
 
+  fetch(`http://www.omdbapi.com/?apikey=${KEY}&s=batman`)
+    .then((resp) => resp.json())
+    .then((data) => console.log(data.Search));
+  // in above we are not use set state because it update the sate and rerender and make infinite loop
+  // setMovies([])or setmovie(data.search)
   return (
     <>
       <Navbar>
