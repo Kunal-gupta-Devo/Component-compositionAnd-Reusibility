@@ -54,18 +54,31 @@ export default function App() {
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const query = "batman";
+  const [error, setError] = useState("");
+  const query = "n";
   useEffect(function () {
     async function fetchMovies() {
-      setIsLoading(true);
-      const res = await fetch(
-        `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
-      );
-      const data = await res.json();
-      setMovies(data.Search);
-      // .then((resp) => resp.json())
-      // .then((data) => setMovies(data.Search));
-      setIsLoading(false);
+      try {
+        setIsLoading(true);
+        const res = await fetch(
+          `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+        );
+
+        if (!res.ok) throw new Error("something wrong in fetching");
+
+        const data = await res.json();
+
+        if (data.Response === "False") throw new Error("Movie not found");
+        setMovies(data.Search);
+        console.log(data);
+        // .then((resp) => resp.json())
+        // .then((data) => setMovies(data.Search));
+      } catch (err) {
+        console.error(err.message);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchMovies();
   }, []);
@@ -79,7 +92,12 @@ export default function App() {
       </Navbar>
 
       <Main>
-        <Box>{isLoading ? <Loader /> : <MovieList movies={movies} />}</Box>
+        <Box>
+          {/* {isLoading ? <Loader /> : <MovieList movies={movies} />} */}
+          {isLoading && <Loader />}
+          {!isLoading && !error && <MovieList movies={movies} />}
+          {error && <Errormessage message={error} />}
+        </Box>
         <Box>
           <>
             <WatchedSummary watched={watched} />
@@ -93,6 +111,13 @@ export default function App() {
 
 function Loader() {
   return <p className="loader"> Loading ....</p>;
+}
+function Errormessage({ message }) {
+  return (
+    <p className="">
+      <span>+{message}</span>
+    </p>
+  );
 }
 function Navbar({ children }) {
   return (
