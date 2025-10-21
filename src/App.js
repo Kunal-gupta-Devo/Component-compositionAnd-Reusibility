@@ -29,7 +29,7 @@ const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 const KEY = "6e5f9280";
 export default function App() {
-  const [query, setQuery] = useState("batman");
+  const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -90,6 +90,7 @@ export default function App() {
         setError("");
         return;
       }
+      handleCloseMovies();
       fetchMovies();
       return function () {
         controller.abort();
@@ -260,6 +261,10 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   const [userRating, setUserRating] = useState("");
 
   const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
+  const watchedUserRating = watched.find(
+    (movie) => movie.imdbID === selectedId
+  )?.userRating;
+
   const {
     Title: title,
     Year: year,
@@ -273,7 +278,11 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
     Plot: plot,
   } = movie;
 
+  /* eslint-disable */
+  // if (imdbRating > 3) [isTop, setIsTop] = useState(true);
   // console.log(title, year);
+
+  if (imdbRating > 8) return <p>Greatest Ever!</p>;
   function handleAdd() {
     const newWatchedMovie = {
       imdbId: selectedId,
