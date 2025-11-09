@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import StarRating from "./StarRating";
 
 const tempMovieData = [
@@ -31,12 +31,17 @@ const KEY = "6e5f9280";
 export default function App() {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelctedId] = useState("null");
   const tempQuery = "batman";
 
+  // const [watched, setWatched] = useState([]);
+  const [watched, setWatched] = useState(function () {
+    const storedValue = localStorage.getItem("watched");
+    return JSON.parse(storedValue);
+  });
+  // whenever the intial value of the useeffect depend on some computation we should pass function like above.
   function handleSelectMovie(id) {
     setSelctedId((selectedId) => (id === selectedId ? null : id));
   }
@@ -46,11 +51,19 @@ export default function App() {
   }
   function handleAddWatched(movie) {
     setWatched((watched) => [...watched, movie]);
+    // localStorage.setItem("watched", JSON.stringify([...watched, movie])); here we are using array but not in useeffect because of dependecy array
+    // we will use localStorage for multiple use so we use in useEffect
   }
   function handleDeleteWatched(id) {
     setWatched((watched) => watched.filter((movie) => movie.imdbId !== id));
   }
-
+  useEffect(
+    function () {
+      localStorage.setItem("watched", JSON.stringify(watched));
+    },
+    [watched]
+  );
+  // watched state is syncronis with localstorage
   useEffect(
     function () {
       const controller = new AbortController();
@@ -170,6 +183,35 @@ function Logo() {
 }
 
 function Search({ query, setQuery }) {
+  // useEffect(function () {
+  //   const el = document.querySelector(".search");
+  //   console.log(el);
+  //   el.focus();
+  // }, []);
+  // but this not a react way we use useRef
+  const inputEl = useRef(null);
+
+  useEffect(
+    function () {
+      function callback(e) {
+        if (document.activeElement === inputEl.current) return;
+        if (e.code === "Enter") {
+          console.log(inputEl.current);
+          inputEl.current.focus();
+          setQuery("");
+        }
+      }
+
+      document.addEventListener("keydown", callback);
+      return () => document.addEventListener("keydown", callback);
+    },
+    [setQuery]
+  );
+  // there are three steps for using useRef <I> create ref <II> use that ref in element <III> use Useeffect for focous because ref nly get assed to DOM element
+  // useEffect(function () {
+  //   inputEl.current.focus();
+  // }, []);
+
   return (
     <input
       className="search"
@@ -177,6 +219,7 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      ref={inputEl}
     />
   );
 }
@@ -260,6 +303,16 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState("");
 
+  const countRef = useRef(0);
+
+  useEffect(
+    function () {
+      if (userRating) {
+        countRef.current = countRef.current + 1;
+      }
+    },
+    [userRating]
+  );
   const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
   const watchedUserRating = watched.find(
     (movie) => movie.imdbID === selectedId
@@ -282,7 +335,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   // if (imdbRating > 3) [isTop, setIsTop] = useState(true);
   // console.log(title, year);
 
-  if (imdbRating > 8) return <p>Greatest Ever!</p>;
+  // if (imdbRating > 8) return <p>Greatest Ever!</p>;
   function handleAdd() {
     const newWatchedMovie = {
       imdbId: selectedId,
@@ -292,6 +345,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
+      countRatingDecision: countRef.current,
     };
     onAddWatched(newWatchedMovie);
     onCloseMovie();
